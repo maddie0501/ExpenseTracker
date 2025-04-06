@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import styles from "./expensetracker.module.css";
 import { enqueueSnackbar } from "notistack";
 import { PieChart, Pie, Cell } from "recharts";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
@@ -42,8 +42,7 @@ const renderCustomizedLabel = ({
   );
 };
 
-const BasicModal = ({ open, onClose,onAddExpense}) => {
-
+const BasicModal = ({ open, onClose, onAddExpense }) => {
   const [formData, setFormData] = useState({
     title: "",
     price: "",
@@ -59,7 +58,7 @@ const BasicModal = ({ open, onClose,onAddExpense}) => {
     e.preventDefault();
     onAddExpense({
       ...formData,
-      amount: parseFloat(formData.price),
+      amount: formData.price,
     });
     setFormData({ title: "", price: "", category: "", date: "" });
   };
@@ -92,6 +91,7 @@ const BasicModal = ({ open, onClose,onAddExpense}) => {
             <option value="Shopping">Shopping</option>
             <option value="Travel">Travel</option>
             <option value="Bills">Bills</option>
+            <option value="Entertainment">Entertainment</option>
           </select>
           <input
             type="date"
@@ -110,13 +110,12 @@ const BasicModal = ({ open, onClose,onAddExpense}) => {
   );
 };
 
-const Modaladdbalance = ({ balance, onClose,onAddIncome  }) => {
-
+const Modaladdbalance = ({ balance, onClose, onAddIncome }) => {
   const [incomeAmount, setIncomeAmount] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onAddIncome(parseFloat(incomeAmount));
+    onAddIncome(incomeAmount);
     setIncomeAmount("");
   };
   return (
@@ -145,7 +144,7 @@ const ExpenseApp = () => {
   const [open, setOpen] = useState(false);
   const [balance, setbalance] = useState(false);
   const [walletBalance, setWalletBalance] = useState(
-    parseFloat(localStorage.getItem("walletBalance")) || 5000
+    localStorage.getItem("walletBalance") || 5000
   );
   const [expenses, setExpenses] = useState(
     JSON.parse(localStorage.getItem("expenses")) || []
@@ -170,23 +169,25 @@ const ExpenseApp = () => {
       return;
     }
 
-    if (parseFloat(newExpense.amount) > walletBalance) {
+    if (newExpense.amount > walletBalance) {
       enqueueSnackbar("Not enough balance in wallet!");
       return;
     }
 
     setExpenses((prev) => [...prev, newExpense]);
-    setWalletBalance((prev) => prev - parseFloat(newExpense.amount));
+    setWalletBalance((prev) => prev - newExpense.amount);
     setOpen(false);
+    console.log("Adding new expense:", newExpense);
   };
   const handleAddIncome = (incomeAmount) => {
     if (!incomeAmount || isNaN(incomeAmount)) {
       enqueueSnackbar("Please enter a valid amount");
       return;
     }
-    setWalletBalance((prev) => prev + parseFloat(incomeAmount));
+    setWalletBalance((prev) => prev + incomeAmount);
     setbalance(false);
   };
+  const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0);
 
   return (
     <div className={styles.box1}>
@@ -211,7 +212,7 @@ const ExpenseApp = () => {
             />
           </section>
           <section className={styles.expense}>
-            <h3 style={{ color: "white" }}>Expenses: </h3>
+            <h3 style={{ color: "white" }}>Expenses: ₹{totalExpenses} </h3>
             <button
               type="button"
               className={styles.btn2}
@@ -246,9 +247,7 @@ const ExpenseApp = () => {
             </Pie>
           </PieChart>
 
-          <BarChart 
-          layout="vertical"
-          width={300} height={200} data={data}>
+          <BarChart layout="vertical" width={300} height={200} data={data}>
             <XAxis type="number" />
             <YAxis dataKey="name" type="category" />
             <Tooltip />
@@ -268,13 +267,28 @@ const ExpenseApp = () => {
         <section>
           <h3 style={{ color: "white" }}>Recent Transactions</h3>
           <div className={styles.trnx}>
-            <p>Samosa</p>
+            {expenses.map((exp, index) => (
+              <div key={index} className={styles.trnxItem}>
+                <p>{exp.title}</p>
+                <p>₹{exp.amount}</p>
+                <p>{exp.date}</p>
+              </div>
+            ))}
           </div>
         </section>
         <section>
           <h3 style={{ color: "white" }}>Top Expenses</h3>
           <div className={styles.topexpense}>
-            <p>expense</p>
+            {expenses
+              .sort((a, b) => b.amount - a.amount)
+              .slice(0, 3)
+              .map((exp, index) => (
+                <div key={index}>
+                  <p>
+                    {exp.title}
+                  </p>
+                </div>
+              ))}
           </div>
         </section>
       </div>
