@@ -1,13 +1,15 @@
 .box1 {
-  width: 1256;
-  height: 781;
-  top: 36px;
-  left: 12px;
+  position: relative;
+  width: 100%;
+  height: auto;
   border-radius: 3px;
   background: rgba(59, 59, 59, 1);
 }
 
 .box2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   width: 1211;
   height: 269;
   top: 94px;
@@ -17,61 +19,86 @@
   box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
 }
 
-.box3 {
-  display: flex;
-  gap: 10px;
-  width: 355.4117736816406;
-  height: 181;
-  top: 140px;
-  left: 90px;
-  border-radius: 15px;
-  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
-}
-
-
-
 .wallet {
+  position: absolute;
+  text-align: center;
   justify-content: center;
   align-items: center;
-  width: 355.4117736816406;
-  height: 181;
+  width: 356px;
+  height: 181px;
   top: 140px;
   left: 90px;
   border-radius: 15px;
   background: rgba(155, 155, 155, 1);
+}
+.walletBalance {
+  color: white;
+  font-family: Ubuntu;
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 100%;
+  letter-spacing: 0%;
+  width: 302;
+  height: 34;
+  top: 192px;
+  left: 113px;
 }
 
 .expense {
-  width: 355.4117736816406;
-  height: 181;
+  position: absolute;
+  text-align: center;
+  width: 356px;
+  height: 181px;
   top: 140px;
-  left: 494.59px;
+  left: 495px;
   border-radius: 15px;
   background: rgba(155, 155, 155, 1);
 }
 
+.expensebox {
+  font-family: Ubuntu;
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 100%;
+  letter-spacing: 0%;
+  width: 211;
+  height: 34;
+  top: 192px;
+  left: 558px;
+  color: white;
+}
+.charts {
+  height: 100%;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
 .btn1 {
-  width: 167.64706420898438;
-  height: 38;
+  width: 168px;
+  height: 38px;
   top: 245px;
-  left: 183.88px;
+  left: 184px;
   border-radius: 15px;
   background: linear-gradient(90deg, #b5dc52 0%, #89e148 100%);
 }
 
 .btn2 {
-  width: 167.64706420898438;
-  height: 38;
+  width: 168px;
+  height: 38px;
   top: 245px;
-  left: 588.47px;
+  left: 589px;
   border-radius: 15px;
   background: linear-gradient(90deg, #ff9595 0%, #ff4747 80%, #ff3838 100%);
 }
 
 .trnx {
-  width: 738.3304443359375;
-  height: 345.0250549316406;
-  top: 440.97px;
+  width: 739px;
+  height: 346px;
+  top: 441px;
   left: 32px;
   border-radius: 15px;
   background: rgba(255, 255, 255, 1);
@@ -79,8 +106,8 @@
 }
 
 .topexpense {
-  width: 417;
-  height: 345;
+  width: 417px;
+  height: 345px;
   top: 441px;
   left: 800px;
   border-radius: 15px;
@@ -90,9 +117,8 @@
 
 .bottom {
   display: flex;
-  gap:500px
+  gap: 50px;
 }
-
 
 .modalbox {
   width: 538;
@@ -100,8 +126,34 @@
   top: 259px;
   left: 371px;
   border-radius: 15px;
+  background: rgba(239, 239, 239, 0.85);
   
-
 }
 
+.transactionh3 {
+  font-family: Ubuntu;
+  font-weight: 700;
+  font-style: italic;
+  font-size: 28px;
+  line-height: 100%;
+  letter-spacing: 0%;
+  color: white;
+  width: 261;
+  height: 32;
+  top: 399px;
+  left: 32px;
+}
 
+.expenseh3 {
+  font-family: Ubuntu;
+  font-weight: 700;
+  font-style: italic;
+  font-size: 28px;
+  line-height: 100%;
+  letter-spacing: 0%;
+  color: white;
+  width: 175;
+  height: 32;
+  top: 399px;
+  left: 800px;
+}

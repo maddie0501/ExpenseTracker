@@ -51,12 +51,14 @@ const BasicModal = ({ open, onClose, onAddExpense }) => {
   });
 
   const handleChange = (e) => {
+    // adds when user writes or else nothing gets set
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onAddExpense({
+      // so when user click on submit
       ...formData,
       amount: formData.price,
     });
@@ -119,8 +121,8 @@ const Modaladdbalance = ({ balance, onClose, onAddIncome }) => {
     setIncomeAmount("");
   };
   return (
-    <Modal open={balance} onClose={onClose}>
-      <Box className={styles.modalbox}>
+    <Modal open={balance} onClose={onClose} className={styles.modalbox}>
+      <Box >
         <Typography variant="h4">Add Balance</Typography>
         <form onSubmit={handleSubmit}>
           <input
@@ -144,9 +146,11 @@ const ExpenseApp = () => {
   const [open, setOpen] = useState(false);
   const [balance, setbalance] = useState(false);
   const [walletBalance, setWalletBalance] = useState(
+    //default 5000 set
     localStorage.getItem("walletBalance") || 5000
   );
   const [expenses, setExpenses] = useState(
+    // default empty
     JSON.parse(localStorage.getItem("expenses")) || []
   );
 
@@ -175,57 +179,72 @@ const ExpenseApp = () => {
     }
 
     setExpenses((prev) => [...prev, newExpense]);
-    setWalletBalance((prev) => prev - newExpense.amount);
+    setWalletBalance((prev) => prev - newExpense.amount); // re,ove from wallet
     setOpen(false);
-    console.log("Adding new expense:", newExpense);
+    //console.log("new expense", newExpense);
   };
   const handleAddIncome = (incomeAmount) => {
-    if (!incomeAmount || isNaN(incomeAmount)) {
+    const parsed = parseFloat(incomeAmount);
+
+    if (!parsed || isNaN(parsed)) {
+      // if not a number
       enqueueSnackbar("Please enter a valid amount");
       return;
     }
-    setWalletBalance((prev) => prev + incomeAmount);
+
+    setWalletBalance((prev) => {
+      const prevNum = parseFloat(prev); // parsefloat so that it is converted to string
+      return prevNum + parsed; //add
+    });
+
     setbalance(false);
   };
-  const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0);
+  const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0); // add the spent amt
+
+  const barChartData = expenses.map((exp) => ({
+    name: exp.title,
+    value: parseFloat(exp.amount),
+  }));
 
   return (
     <div className={styles.box1}>
       <h1 style={{ color: "white" }}>Expense Tracker</h1>
       <div className={styles.box2}>
-        <div className={styles.box3}>
-          <section className={styles.wallet}>
-            <h3 style={{ color: "white" }}>
-              Wallet Balance: ₹{walletBalance}{" "}
-            </h3>
-            <button
-              type="button"
-              className={styles.btn1}
-              onClick={() => setbalance(true)}
-            >
-              + Add Income
-            </button>
-            <Modaladdbalance
-              balance={balance}
-              onClose={() => setbalance(false)}
-              onAddIncome={handleAddIncome}
-            />
-          </section>
-          <section className={styles.expense}>
-            <h3 style={{ color: "white" }}>Expenses: ₹{totalExpenses} </h3>
-            <button
-              type="button"
-              className={styles.btn2}
-              onClick={() => setOpen(true)}
-            >
-              + Add Expense
-            </button>
-            <BasicModal
-              open={open}
-              onClose={() => setOpen(false)}
-              onAddExpense={handleAddExpense}
-            />
-          </section>
+        <section className={styles.wallet}>
+          <h3 className={styles.walletBalance}>
+            Wallet Balance: ₹{walletBalance}
+          </h3>
+          <button
+            style={{ color: "white" }}
+            type="button"
+            className={styles.btn1}
+            onClick={() => setbalance(true)}
+          >
+            + Add Income
+          </button>
+          <Modaladdbalance
+            balance={balance}
+            onClose={() => setbalance(false)}
+            onAddIncome={handleAddIncome}
+          />
+        </section>
+        <section className={styles.expense}>
+          <h3 className={styles.expensebox}>Expenses: ₹{totalExpenses} </h3>
+          <button
+            style={{ color: "white" }}
+            type="button"
+            className={styles.btn2}
+            onClick={() => setOpen(true)}
+          >
+            + Add Expense
+          </button>
+          <BasicModal
+            open={open}
+            onClose={() => setOpen(false)}
+            onAddExpense={handleAddExpense}
+          />
+        </section>
+        <section className={styles.charts}>
           <PieChart width={200} height={200}>
             <Pie
               data={data}
@@ -247,7 +266,7 @@ const ExpenseApp = () => {
             </Pie>
           </PieChart>
 
-          <BarChart layout="vertical" width={300} height={200} data={data}>
+          <BarChart layout="vertical" width={200} height={80} data={data}>
             <XAxis type="number" />
             <YAxis dataKey="name" type="category" />
             <Tooltip />
@@ -260,12 +279,12 @@ const ExpenseApp = () => {
               ))}
             </Bar>
           </BarChart>
-        </div>
+        </section>
       </div>
 
       <div className={styles.bottom}>
         <section>
-          <h3 style={{ color: "white" }}>Recent Transactions</h3>
+          <h3 className={styles.transactionh3}>Recent Transactions</h3>
           <div className={styles.trnx}>
             {expenses.map((exp, index) => (
               <div key={index} className={styles.trnxItem}>
@@ -277,18 +296,26 @@ const ExpenseApp = () => {
           </div>
         </section>
         <section>
-          <h3 style={{ color: "white" }}>Top Expenses</h3>
+          <h3 className={styles.expenseh3}>Top Expenses</h3>
           <div className={styles.topexpense}>
-            {expenses
-              .sort((a, b) => b.amount - a.amount)
-              .slice(0, 3)
-              .map((exp, index) => (
-                <div key={index}>
-                  <p>
-                    {exp.title}
-                  </p>
-                </div>
-              ))}
+            <BarChart
+              layout="vertical"
+              width={300}
+              height={250}
+              data={barChartData}
+            >
+              {/* <XAxis type="number" />
+            <YAxis dataKey="name" type="category" />
+            <Tooltip /> */}
+              <Bar dataKey="value">
+                {barChartData.map((entry, index) => (
+                  <Cell
+                    key={`cell-bar-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
           </div>
         </section>
       </div>
