@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from "react";
 import styles from "./expensetracker.module.css";
-import { enqueueSnackbar } from "notistack";
+import { useSnackbar } from "notistack";
 import { PieChart, Pie, Cell } from "recharts";
-import { BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import Modal from "@mui/material/Modal";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, LabelList } from "recharts";
+import { IoFastFoodSharp, IoReceipt } from "react-icons/io5";
+import { MdOutlineDeleteForever } from "react-icons/md";
+import { MdOutlineEdit, MdShoppingCart, MdFlight } from "react-icons/md";
+import { BiSolidCameraMovie } from "react-icons/bi";
 
 const data = [
-  { name: "Group A", value: 700 },
-  { name: "Group B", value: 100 },
-  { name: "Group C", value: 300 },
+  { name: "Food", value: 700 },
+  { name: "Entertainment", value: 100 },
+  { name: "Travel", value: 300 },
 ];
 
 const COLORS = ["#FF9304", "#FFBB28", "#A000FF"];
@@ -42,7 +43,7 @@ const renderCustomizedLabel = ({
   );
 };
 
-const BasicModal = ({ open, onClose, onAddExpense }) => {
+const ModaladdExpense = ({ onClose, onAddExpense }) => {
   const [formData, setFormData] = useState({
     title: "",
     price: "",
@@ -51,68 +52,90 @@ const BasicModal = ({ open, onClose, onAddExpense }) => {
   });
 
   const handleChange = (e) => {
-    // adds when user writes or else nothing gets set
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onAddExpense({
-      // so when user click on submit
       ...formData,
-      amount: formData.price,
+      amount: formData.price, // or parseFloat(formData.price)
     });
     setFormData({ title: "", price: "", category: "", date: "" });
+    onClose(); // optionally close the modal after submit
   };
+
   return (
-    <Modal open={open} onClose={onClose}>
-      <Box className={styles.modalbox}>
-        <Typography variant="h4">Add Expense</Typography>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            name="title"
-            placeholder="Title"
-            value={formData.title}
-            onChange={handleChange}
-          />
-          <input
-            type="number"
-            name="price"
-            placeholder="Price"
-            value={formData.price}
-            onChange={handleChange}
-          />
-          <select
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
+    <div className="fixed inset-0 grid place-items-center bg-black/75 z-10">
+      <div className="absolute inset-0 bg-black/25 -z-10" onClick={onClose} />
+
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-4 rounded shadow-md max-w-md w-full"
+      >
+        <h1 className="text-center text-2xl font-bold">Add Expense</h1>
+
+        <input
+          type="text"
+          name="title"
+          placeholder="Title"
+          value={formData.title}
+          onChange={handleChange}
+          className="w-full p-2 border border-gray-300 rounded mt-4"
+        />
+
+        <input
+          type="number"
+          name="price"
+          placeholder="Price"
+          value={formData.price}
+          onChange={handleChange}
+          className="w-full p-2 border border-gray-300 rounded mt-4"
+        />
+
+        <select
+          name="category"
+          value={formData.category}
+          onChange={handleChange}
+          className="w-full p-2 border border-gray-300 rounded mt-4"
+        >
+          <option value="">Select Category</option>
+          <option value="Food">Food</option>
+          <option value="Shopping">Shopping</option>
+          <option value="Travel">Travel</option>
+          <option value="Bills">Bills</option>
+          <option value="Entertainment">Entertainment</option>
+        </select>
+
+        <input
+          type="date"
+          name="date"
+          value={formData.date}
+          onChange={handleChange}
+          className="w-full p-2 border border-gray-300 rounded mt-4"
+        />
+
+        <div className="flex justify-between mt-4 items-center gap-4">
+          <button
+            type="submit"
+            className="p-2 px-4 bg-green-300 text-green-800 rounded-full"
           >
-            <option value="">Select Category</option>
-            <option value="Food">Food</option>
-            <option value="Shopping">Shopping</option>
-            <option value="Travel">Travel</option>
-            <option value="Bills">Bills</option>
-            <option value="Entertainment">Entertainment</option>
-          </select>
-          <input
-            type="date"
-            name="date"
-            placeholder="Date"
-            value={formData.date}
-            onChange={handleChange}
-          />
-          <button type="submit">Add Expense</button>
-          <button type="button" onClick={onClose}>
+            Add Expense
+          </button>
+          <button
+            type="button"
+            className="p-2 px-4 bg-red-300 text-red-800 rounded-full"
+            onClick={onClose}
+          >
             Cancel
           </button>
-        </form>
-      </Box>
-    </Modal>
+        </div>
+      </form>
+    </div>
   );
 };
 
-const Modaladdbalance = ({ balance, onClose, onAddIncome }) => {
+const Modaladdbalance = ({ onClose, onAddIncome }) => {
   const [incomeAmount, setIncomeAmount] = useState("");
 
   const handleSubmit = (e) => {
@@ -120,25 +143,41 @@ const Modaladdbalance = ({ balance, onClose, onAddIncome }) => {
     onAddIncome(incomeAmount);
     setIncomeAmount("");
   };
+
   return (
-    <Modal open={balance} onClose={onClose} className={styles.modalbox}>
-      <Box >
-        <Typography variant="h4">Add Balance</Typography>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="number"
-            name="amount"
-            placeholder="Income Amount"
-            value={incomeAmount}
-            onChange={(e) => setIncomeAmount(e.target.value)}
-          />
-          <button type="submit">Add Balance</button>
-          <button type="button" onClick={onClose}>
+    <div className="fixed inset-0 grid place-items-center bg-black/75 z-10">
+      {/* fullscreen overlay to close the model on clcking outside */}
+      <div className="absolute inset-0 bg-black/25 -z-10" onClick={onClose} />
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-4 rounded shadow-md max-w-md w-full"
+      >
+        <h1 className="text-center text-2xl font-bold">Add Balance</h1>
+        <input
+          type="number"
+          name="amount"
+          placeholder="Income Amount"
+          value={incomeAmount}
+          onChange={(e) => setIncomeAmount(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded mt-4"
+        />
+        <div className="flex justify-between mt-4 items-center gap-4">
+          <button
+            type="submit"
+            className="p-2 px-4 bg-green-300 text-geen-800 rounded-full"
+          >
+            Add Balance
+          </button>
+          <button
+            type="button"
+            className="p-2 px-4 bg-red-300 text-red-800 rounded-full"
+            onClick={onClose}
+          >
             Cancel
           </button>
-        </form>
-      </Box>
-    </Modal>
+        </div>
+      </form>
+    </div>
   );
 };
 
@@ -153,6 +192,8 @@ const ExpenseApp = () => {
     // default empty
     JSON.parse(localStorage.getItem("expenses")) || []
   );
+
+  const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
     localStorage.setItem("walletBalance", walletBalance);
@@ -199,21 +240,45 @@ const ExpenseApp = () => {
 
     setbalance(false);
   };
-  const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0); // add the spent amt
+  const totalExpenses = expenses.reduce(
+    (acc, curr) => acc + Number(curr.amount),
+    0
+  ); // add the spent amt n use number() to actuall add
 
   const barChartData = expenses.map((exp) => ({
     name: exp.title,
     value: parseFloat(exp.amount),
   }));
 
+  const getCategoryIcon = (category) => {
+    switch (category) {
+      case "Food":
+        return <IoFastFoodSharp size={30} />;
+      case "Shopping":
+        return <MdShoppingCart size={30} />;
+      case "Travel":
+        return <MdFlight size={30} />;
+      case "Bills":
+        return <IoReceipt size={30} />;
+      case "Entertainment":
+        return <BiSolidCameraMovie size={30} />;
+      default:
+        return null;
+    }
+  };
+
+
+
   return (
     <div className={styles.box1}>
-      <h1 style={{ color: "white" }}>Expense Tracker</h1>
+      <h1 className={styles.h1tag}>Expense Tracker</h1>
       <div className={styles.box2}>
         <section className={styles.wallet}>
           <h3 className={styles.walletBalance}>
             Wallet Balance: ₹{walletBalance}
           </h3>
+
+          <div></div>
           <button
             style={{ color: "white" }}
             type="button"
@@ -222,11 +287,14 @@ const ExpenseApp = () => {
           >
             + Add Income
           </button>
-          <Modaladdbalance
-            balance={balance}
-            onClose={() => setbalance(false)}
-            onAddIncome={handleAddIncome}
-          />
+
+          {balance && (
+            <Modaladdbalance
+              balance={balance}
+              onClose={() => setbalance(false)}
+              onAddIncome={handleAddIncome}
+            />
+          )}
         </section>
         <section className={styles.expense}>
           <h3 className={styles.expensebox}>Expenses: ₹{totalExpenses} </h3>
@@ -238,11 +306,12 @@ const ExpenseApp = () => {
           >
             + Add Expense
           </button>
-          <BasicModal
-            open={open}
-            onClose={() => setOpen(false)}
-            onAddExpense={handleAddExpense}
-          />
+          {open && (
+            <ModaladdExpense
+              onClose={() => setOpen(false)}
+              onAddExpense={handleAddExpense}
+            />
+          )}
         </section>
         <section className={styles.charts}>
           <PieChart width={200} height={200}>
@@ -268,9 +337,13 @@ const ExpenseApp = () => {
 
           <BarChart layout="vertical" width={200} height={80} data={data}>
             <XAxis type="number" />
-            <YAxis dataKey="name" type="category" />
-            <Tooltip />
-            <Bar dataKey="value">
+            <YAxis dataKey="name" type="category" width={60} />
+            <Bar dataKey="value" barSize={20}>
+              <LabelList
+                dataKey="name"
+                position="right"
+                style={{ color: "white" }}
+              />
               {data.map((entry, index) => (
                 <Cell
                   key={`cell-bar-${index}`}
@@ -288,9 +361,40 @@ const ExpenseApp = () => {
           <div className={styles.trnx}>
             {expenses.map((exp, index) => (
               <div key={index} className={styles.trnxItem}>
-                <p>{exp.title}</p>
-                <p>₹{exp.amount}</p>
-                <p>{exp.date}</p>
+                <h3
+                  style={{
+                    padding: "10px",
+                    display: "flex",
+                    gap: "10px",
+                    fontSize: "20px",
+                  }}
+                >
+                  {getCategoryIcon(exp.category)}
+                  {exp.title}
+                </h3>
+                <div
+                  style={{
+                    display: "flex",
+                    padding: "10px",
+                    color: "gray",
+                    borderBottom: "1px solid gray",
+                    width: "95%",
+                  }}
+                >
+                  <p>
+                    {new Date(exp.date).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "2-digit",
+                    })}
+                  </p>
+
+                  <p style={{ marginLeft: "500px", paddingRight: "5px" }}>
+                    ₹{exp.amount}
+                  </p>
+                  <MdOutlineDeleteForever size={30} />
+                  <MdOutlineEdit size={30} />
+                </div>
               </div>
             ))}
           </div>
@@ -300,14 +404,22 @@ const ExpenseApp = () => {
           <div className={styles.topexpense}>
             <BarChart
               layout="vertical"
-              width={300}
-              height={250}
+              width={200}
+              height={80}
               data={barChartData}
+              barCategoryGap={20}
+              style={{ paddingLeft: "20px" }}
             >
-              {/* <XAxis type="number" />
-            <YAxis dataKey="name" type="category" />
-            <Tooltip /> */}
+              <XAxis type="number" hide />
+              <YAxis dataKey="name" type="category" hide />
+
               <Bar dataKey="value">
+                <LabelList
+                  dataKey="name"
+                  position="right"
+                  style={{ color: "white" }}
+                />
+
                 {barChartData.map((entry, index) => (
                   <Cell
                     key={`cell-bar-${index}`}
