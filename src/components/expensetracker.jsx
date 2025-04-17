@@ -8,48 +8,28 @@ import { MdOutlineDeleteForever } from "react-icons/md";
 import { MdOutlineEdit, MdShoppingCart, MdFlight } from "react-icons/md";
 import { BiSolidCameraMovie } from "react-icons/bi";
 
-const data = [
-  { name: "Food", value: 700 },
-  { name: "Entertainment", value: 100 },
-  { name: "Travel", value: 300 },
-];
-
 const COLORS = ["#FF9304", "#FFBB28", "#A000FF"];
 
 const RADIAN = Math.PI / 180;
 
-const renderCustomizedLabel = ({
-  cx,
-  cy,
-  midAngle,
-  innerRadius,
-  outerRadius,
-  percent,
-}) => {
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-  return (
-    <text
-      x={x}
-      y={y}
-      fill="white"
-      textAnchor={x > cx ? "start" : "end"}
-      dominantBaseline="central"
-    >
-      {`${(percent * 100).toFixed(0)}%`}
-    </text>
-  );
-};
-
-const ModaladdExpense = ({ onClose, onAddExpense }) => {
+const ModaladdExpense = ({ onClose, onAddExpense, editingExpense }) => {
   const [formData, setFormData] = useState({
     title: "",
     price: "",
     category: "",
     date: "",
   });
+
+  useEffect(() => {
+    if (editingExpense) {
+      setFormData({
+        title: editingExpense.title || "",
+        price: editingExpense.amount || "", // `amount` is stored, but you're using `price` in the form
+        category: editingExpense.category || "",
+        date: editingExpense.date || "",
+      });
+    }
+  }, [editingExpense]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -194,6 +174,7 @@ const ExpenseApp = () => {
   );
 
   const { enqueueSnackbar } = useSnackbar();
+  const [editingExpense, setEditingExpense] = useState(null);
 
   useEffect(() => {
     localStorage.setItem("walletBalance", walletBalance);
@@ -202,6 +183,24 @@ const ExpenseApp = () => {
   useEffect(() => {
     localStorage.setItem("expenses", JSON.stringify(expenses));
   }, [expenses]);
+
+  const getChartDataFromExpenses = (expenses) => {
+    const dataMap = {};
+
+    expenses.forEach((expense) => {
+      dataMap[expense.category] =
+        (dataMap[expense.category] || 0) + parseFloat(expense.amount);
+    });
+    const colors = ["#FF9304", "#A000FF", "#FDE006"];
+
+    return Object.entries(dataMap).map(([category, value], index) => ({
+      category,
+      value,
+      fill: colors[index % colors.length], // Dynamic color for each category
+    }));
+  };
+
+  const chartData = getChartDataFromExpenses(expenses);
 
   const handleAddExpense = (newExpense) => {
     if (
@@ -214,16 +213,42 @@ const ExpenseApp = () => {
       return;
     }
 
-    if (newExpense.amount > walletBalance) {
-      enqueueSnackbar("Not enough balance in wallet!");
-      return;
+    const amountNum = Number(newExpense.amount);
+
+    if (editingExpense) {
+      const original = expenses.find((exp) => exp.id === editingExpense.id);
+      const originalAmount = Number(original.amount);
+
+      // Calculate difference and adjust wallet
+      const difference = amountNum - originalAmount;
+
+      if (walletBalance < difference) {
+        enqueueSnackbar("Not enough balance to update this expense!");
+        return;
+      }
+
+      const updatedExpenses = expenses.map((exp) =>
+        exp.id === editingExpense.id
+          ? { ...newExpense, id: editingExpense.id }
+          : exp
+      );
+      setExpenses(updatedExpenses);
+      setWalletBalance((prev) => prev - difference);
+      setEditingExpense(null);
+    } else {
+      if (amountNum > walletBalance) {
+        enqueueSnackbar("Not enough balance in wallet!");
+        return;
+      }
+
+      const expenseWithId = { ...newExpense, id: Date.now() };
+      setExpenses((prev) => [...prev, expenseWithId]);
+      setWalletBalance((prev) => prev - amountNum);
     }
 
-    setExpenses((prev) => [...prev, newExpense]);
-    setWalletBalance((prev) => prev - newExpense.amount); // re,ove from wallet
     setOpen(false);
-    //console.log("new expense", newExpense);
   };
+
   const handleAddIncome = (incomeAmount) => {
     const parsed = parseFloat(incomeAmount);
 
@@ -245,10 +270,11 @@ const ExpenseApp = () => {
     0
   ); // add the spent amt n use number() to actuall add
 
-  const barChartData = expenses.map((exp) => ({
-    name: exp.title,
+  const barChartData = expenses.map((exp, index) => ({
+    name: `${exp.title}-${index}`, // Ensure uniqueness with index
     value: parseFloat(exp.amount),
   }));
+  
 
   const getCategoryIcon = (category) => {
     switch (category) {
@@ -267,7 +293,13 @@ const ExpenseApp = () => {
     }
   };
 
+  const handleDelete = (idToDelete) => {
+    const updatedExpenses = expenses.filter((exp) => exp.id !== idToDelete);
 
+    localStorage.setItem("expenses", JSON.stringify(updatedExpenses));
+
+    setExpenses(updatedExpenses);
+  };
 
   return (
     <div className={styles.box1}>
@@ -310,45 +342,27 @@ const ExpenseApp = () => {
             <ModaladdExpense
               onClose={() => setOpen(false)}
               onAddExpense={handleAddExpense}
+              editingExpense={editingExpense}
             />
           )}
         </section>
         <section className={styles.charts}>
-          <PieChart width={200} height={200}>
-            <Pie
-              data={data}
-              cx={100}
-              cy={100}
-              labelLine={false}
-              label={renderCustomizedLabel}
-              outerRadius={80}
-              fill="none"
-              stroke="none"
-              dataKey="value"
-            >
-              {data.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={COLORS[index % COLORS.length]}
-                />
+          <PieChart width={300} height={200}>
+            <Pie data={chartData} dataKey="value" nameKey="category">
+              {chartData.map((entry, index) => (
+                <Cell key={index} fill={entry.fill} />
               ))}
             </Pie>
           </PieChart>
 
-          <BarChart layout="vertical" width={200} height={80} data={data}>
-            <XAxis type="number" />
-            <YAxis dataKey="name" type="category" width={60} />
-            <Bar dataKey="value" barSize={20}>
-              <LabelList
-                dataKey="name"
-                position="right"
-                style={{ color: "white" }}
-              />
-              {data.map((entry, index) => (
-                <Cell
-                  key={`cell-bar-${index}`}
-                  fill={COLORS[index % COLORS.length]}
-                />
+          <BarChart width={100} height={50} data={chartData}>
+            <XAxis type="category" dataKey="category" />
+            <YAxis hide />
+            <Bar dataKey="value" radius={[10, 10, 10, 10]}>
+              {" "}
+              {chartData.map((entry, index) => (
+                <Cell  key={`cell-bar-${entry.name}`} // <- Unique key for each bar
+                fill={COLORS[index % COLORS.length]} />
               ))}
             </Bar>
           </BarChart>
@@ -392,8 +406,19 @@ const ExpenseApp = () => {
                   <p style={{ marginLeft: "500px", paddingRight: "5px" }}>
                     ₹{exp.amount}
                   </p>
-                  <MdOutlineDeleteForever size={30} />
-                  <MdOutlineEdit size={30} />
+                  <MdOutlineDeleteForever
+                    size={30}
+                    style={{ cursor: "pointer" }}
+                    onClick={() => handleDelete(exp.id)}
+                  />
+                  <MdOutlineEdit
+                    size={30}
+                    style={{ cursor: "pointer" }}
+                    onClick={() => {
+                      setEditingExpense(exp);
+                      setOpen(true);
+                    }}
+                  />
                 </div>
               </div>
             ))}
@@ -405,7 +430,7 @@ const ExpenseApp = () => {
             <BarChart
               layout="vertical"
               width={200}
-              height={80}
+              height={100}
               data={barChartData}
               barCategoryGap={20}
               style={{ paddingLeft: "20px" }}
@@ -413,17 +438,13 @@ const ExpenseApp = () => {
               <XAxis type="number" hide />
               <YAxis dataKey="name" type="category" hide />
 
-              <Bar dataKey="value">
-                <LabelList
-                  dataKey="name"
-                  position="right"
-                  style={{ color: "white" }}
-                />
+              <Bar dataKey="value" minPointSize={20}>
+                
 
                 {barChartData.map((entry, index) => (
                   <Cell
-                    key={`cell-bar-${index}`}
-                    fill={COLORS[index % COLORS.length]}
+                  key={`cell-bar-${entry.name}`} 
+                  fill={COLORS[index % COLORS.length]}
                   />
                 ))}
               </Bar>
