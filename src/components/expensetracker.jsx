@@ -2,15 +2,11 @@ import React, { useState, useEffect } from "react";
 import styles from "./expensetracker.module.css";
 import { useSnackbar } from "notistack";
 import { PieChart, Pie, Cell } from "recharts";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, LabelList } from "recharts";
+import { BarChart, Bar, XAxis, YAxis } from "recharts";
 import { IoFastFoodSharp, IoReceipt } from "react-icons/io5";
 import { MdOutlineDeleteForever } from "react-icons/md";
 import { MdOutlineEdit, MdShoppingCart, MdFlight } from "react-icons/md";
 import { BiSolidCameraMovie } from "react-icons/bi";
-
-const COLORS = ["#FF9304", "#FFBB28", "#A000FF"];
-
-const RADIAN = Math.PI / 180;
 
 const ModaladdExpense = ({ onClose, onAddExpense, editingExpense }) => {
   const [formData, setFormData] = useState({
@@ -191,16 +187,22 @@ const ExpenseApp = () => {
       dataMap[expense.category] =
         (dataMap[expense.category] || 0) + parseFloat(expense.amount);
     });
-    const colors = ["#FF9304", "#A000FF", "#FDE006"];
+    const colors = ["#A000FF", "#FF9304", "#FDE006"];
 
     return Object.entries(dataMap).map(([category, value], index) => ({
       category,
       value,
-      fill: colors[index % colors.length], // Dynamic color for each category
+      fill: colors[index % colors.length],
     }));
   };
 
-  const chartData = getChartDataFromExpenses(expenses);
+  const categoryColors = {
+    Food: "#A000FF",
+    Entertainment: "#FF9304",
+    Travel: "#FDE006",
+  };
+
+  const chartData = getChartDataFromExpenses(expenses);  /// used in pie chart
 
   const handleAddExpense = (newExpense) => {
     if (
@@ -270,12 +272,6 @@ const ExpenseApp = () => {
     0
   ); // add the spent amt n use number() to actuall add
 
-  const barChartData = expenses.map((exp, index) => ({
-    name: `${exp.title}-${index}`, // Ensure uniqueness with index
-    value: parseFloat(exp.amount),
-  }));
-  
-
   const getCategoryIcon = (category) => {
     switch (category) {
       case "Food":
@@ -292,6 +288,21 @@ const ExpenseApp = () => {
         return null;
     }
   };
+
+  
+  const categoryTotals = expenses.reduce((acc, curr) => { // create k-v pairs like category:amt
+    const { category, amount } = curr;
+    acc[category] = (acc[category] || 0) + parseFloat(amount);
+    return acc;
+  }, {});
+
+  
+  const barChartData = Object.entries(categoryTotals)  // map the above by convert obj to arr and sort 
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value) // Sort descending (highest first)
+  
+    
+  const chartHeight = Math.max(barChartData.length * 40, 100);  // height of bars
 
   const handleDelete = (idToDelete) => {
     const updatedExpenses = expenses.filter((exp) => exp.id !== idToDelete);
@@ -355,17 +366,14 @@ const ExpenseApp = () => {
             </Pie>
           </PieChart>
 
-          <BarChart width={100} height={50} data={chartData}>
-            <XAxis type="category" dataKey="category" />
-            <YAxis hide />
-            <Bar dataKey="value" radius={[10, 10, 10, 10]}>
-              {" "}
-              {chartData.map((entry, index) => (
-                <Cell  key={`cell-bar-${entry.name}`} // <- Unique key for each bar
-                fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Bar>
-          </BarChart>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <div className={styles.pill1}></div>
+            <p style={{ color: "white" }}> Food</p>
+            <div className={styles.pill2}></div>
+            <p style={{ color: "white" }}>Entertainment</p>
+            <div className={styles.pill3}></div>
+            <p style={{ color: "white" }}>Travel</p>
+          </div>
         </section>
       </div>
 
@@ -429,22 +437,26 @@ const ExpenseApp = () => {
           <div className={styles.topexpense}>
             <BarChart
               layout="vertical"
-              width={200}
-              height={100}
+              width={300}
+              height={chartHeight}
               data={barChartData}
-              barCategoryGap={20}
+              barCategoryGap={10}
               style={{ paddingLeft: "20px" }}
             >
-              <XAxis type="number" hide />
-              <YAxis dataKey="name" type="category" hide />
-
+              <XAxis type="number" hide domain={[0, "dataMax"]} />
+              <YAxis
+                dataKey="name"
+                type="category"
+                axisLine={false} 
+  tickLine={false}
+                tick={{ fill: "black", fontSize: 16 }}
+                width={100}
+              />
               <Bar dataKey="value" minPointSize={20}>
-                
-
-                {barChartData.map((entry, index) => (
+                {barChartData.map((entry) => (
                   <Cell
-                  key={`cell-bar-${entry.name}`} 
-                  fill={COLORS[index % COLORS.length]}
+                    key={`cell-bar-${entry.name}`}
+                    fill={categoryColors[entry.name] || "#ccc"}
                   />
                 ))}
               </Bar>
